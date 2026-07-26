@@ -9,62 +9,62 @@ const DEFAULT_INF_TYPE = 'influence'
 
 // Player's own actions, detected in the player's input.
 const PLAYER_TABLE = {
-  unmask: { base: -8, nouns: { publicly: -7, accidentally: -3 }, infType: 'infamy' },
-  smash: { base: -3, nouns: { building: -5, car: -2 } },
-  rescue: { base: 5, nouns: { civilian: 3, child: 5 } },
-  intervene: { base: 4, nouns: { robbery: 3, hostage: 6 } },
-  interrogate: { base: -2, nouns: { roughly: -4 } },
-  patrol: { base: 2, nouns: { rooftop: 1, alley: 1 } },
-  train: { base: 3, nouns: { sidekick: 2 } },
-  deflect: { base: 2, nouns: { blame: 3 } },
-  broadcast: { base: 6, nouns: { warning: 3, confession: -5 }, infType: 'information' },
-  vanish: { base: -1, nouns: { scene: -2 } },
+  unmask: { base: -8, modifiers: { publicly: -7, accidentally: -3 }, infType: 'infamy' },
+  smash: { base: -3, modifiers: { building: -5, car: -2 } },
+  rescue: { base: 5, modifiers: { civilian: 3, child: 5 } },
+  intervene: { base: 4, modifiers: { robbery: 3, hostage: 6 } },
+  interrogate: { base: -2, modifiers: { roughly: -4 } },
+  patrol: { base: 2, modifiers: { rooftop: 1, alley: 1 } },
+  train: { base: 3, modifiers: { sidekick: 2 } },
+  deflect: { base: 2, modifiers: { blame: 3 } },
+  broadcast: { base: 6, modifiers: { warning: 3, confession: -5 }, infType: 'information' },
+  vanish: { base: -1, modifiers: { scene: -2 } },
 }
 
 // NPC actions directed at/around the player, detected in the AI's output.
 // Requires an NPC pronoun (he/she/they, etc.) nearby to activate. A
 // capitalized name nearby is captured for attribution.
 const NPC_TABLE = {
-  thank: { base: 4, nouns: { publicly: 3, tearfully: 2 } },
-  accuse: { base: -6, nouns: { falsely: -3, reporter: -2 }, infType: 'infamy' },
-  interview: { base: 5, nouns: { reporter: 3 }, infType: 'information' },
-  expose: { base: -10, nouns: { identity: -8 }, infType: 'infamy' },
-  recruit: { base: 6, nouns: { league: 4, agency: 3 } },
-  betray: { base: -12, nouns: { ally: -5 }, infType: 'infamy' },
-  warn: { base: 3, nouns: { civilians: 2 } },
-  frame: { base: -8, nouns: { crime: -6 }, infType: 'infamy' },
-  celebrate: { base: 7, nouns: { city: 4, parade: 3 }, infType: 'information' },
-  investigate: { base: -3, nouns: { detective: -2 } },
+  thank: { base: 4, modifiers: { publicly: 3, tearfully: 2 } },
+  accuse: { base: -6, modifiers: { falsely: -3, reporter: -2 }, infType: 'infamy' },
+  interview: { base: 5, modifiers: { reporter: 3 }, infType: 'information' },
+  expose: { base: -10, modifiers: { identity: -8 }, infType: 'infamy' },
+  recruit: { base: 6, modifiers: { league: 4, agency: 3 } },
+  betray: { base: -12, modifiers: { ally: -5 }, infType: 'infamy' },
+  warn: { base: 3, modifiers: { civilians: 2 } },
+  frame: { base: -8, modifiers: { crime: -6 }, infType: 'infamy' },
+  celebrate: { base: 7, modifiers: { city: 4, parade: 3 }, infType: 'information' },
+  investigate: { base: -3, modifiers: { detective: -2 } },
 }
 
 // Ambient/passive things that happen around the player (seeing, noticing),
 // detected in the AI's output. Same NPC pronoun gate as NPC_TABLE, but no
 // name capture, there's no clear actor to attribute it to.
 const PASSIVE_TABLE = {
-  see: { base: 1, nouns: { symbol: 3, cape: 1 } },
-  notice: { base: 1, nouns: { pattern: 2 } },
-  whisper: { base: -1, nouns: { rumor: -2 } },
-  ignore: { base: -1, nouns: {} },
-  fear: { base: -2, nouns: { power: -3 } },
-  admire: { base: 2, nouns: { courage: 3 } },
+  see: { base: 1, modifiers: { symbol: 3, cape: 1 } },
+  notice: { base: 1, modifiers: { pattern: 2 } },
+  whisper: { base: -1, modifiers: { rumor: -2 } },
+  ignore: { base: -1, modifiers: {} },
+  fear: { base: -2, modifiers: { power: -3 } },
+  admire: { base: 2, modifiers: { courage: 3 } },
 }
 
 const STARTING_INF = 0
-const NOUN_SEARCH_WINDOW = 40
+const MODIFIER_SEARCH_WINDOW = 40
 const SUBJECT_SEARCH_WINDOW = 30
 const NPC_PRONOUN_REGEX = /\b(he|she|they|him|her|them|his|hers|their)\b/i
 
-function nounNear(table, text, verb, verbIndex) {
-  const nouns = Object.keys(table[verb].nouns)
-  const noNouns = nouns.length === 0
-  if (noNouns) return null
+function modifierNear(table, text, verb, verbIndex) {
+  const modifierWords = Object.keys(table[verb].modifiers)
+  const noModifiers = modifierWords.length === 0
+  if (noModifiers) return null
 
-  const window = text.slice(verbIndex, verbIndex + NOUN_SEARCH_WINDOW)
-  const nounRegex = new RegExp(`\\b(${nouns.join('|')})\\b`, 'i')
-  const nounMatch = window.match(nounRegex)
+  const window = text.slice(verbIndex, verbIndex + MODIFIER_SEARCH_WINDOW)
+  const modifierRegex = new RegExp(`\\b(${modifierWords.join('|')})\\b`, 'i')
+  const modifierMatch = window.match(modifierRegex)
 
-  if (nounMatch) log(`nounNear: found "${nounMatch[1]}" near "${verb}"`)
-  return nounMatch ? nounMatch[1] : null
+  if (modifierMatch) log(`modifierNear: found "${modifierMatch[1]}" near "${verb}"`)
+  return modifierMatch ? modifierMatch[1] : null
 }
 
 function allNamesNear(originalText, verbIndex) {
@@ -103,8 +103,8 @@ function allVerbMatches(table, text) {
 
 function resolveMatch(table, originalText, verb, verbIndex) {
   const lower = originalText.toLowerCase()
-  const noun = nounNear(table, lower, verb, verbIndex)
-  return { verb, noun, index: verbIndex }
+  const modifier = modifierNear(table, lower, verb, verbIndex)
+  return { verb, modifier, index: verbIndex }
 }
 
 function PlayerActionsIn(text) {
@@ -131,7 +131,7 @@ function NpcActionsIn(text) {
     .map((match) => ({ ...match, npc: closestNpcNameBefore(text, match.index) }))
 }
 
-function MiscActionsIn(text) {
+function PassiveActionsIn(text) {
   const matches = allVerbMatches(PASSIVE_TABLE, text)
   const resolved = matches.map((match) => resolveMatch(PASSIVE_TABLE, text, match.verb, match.index))
 
@@ -158,13 +158,13 @@ function SetInfType(type) {
   state.infType = type
 }
 
-function InfDeltaFor(table, verb, noun) {
+function InfDeltaFor(table, verb, modifier) {
   const entry = table[verb]
   const noEntry = !entry
   if (noEntry) return 0
 
-  const nounBonus = noun ? entry.nouns[noun] || 0 : 0
-  return entry.base + nounBonus
+  const modifierBonus = modifier ? entry.modifiers[modifier] || 0 : 0
+  return entry.base + modifierBonus
 }
 
 function pendingDelta() {
@@ -187,7 +187,7 @@ function ApplyAllInf(table, matches) {
   for (const match of matches) {
     const entry = table[match.verb]
     if (entry.infType) SetInfType(entry.infType)
-    ApplyInf(InfDeltaFor(table, match.verb, match.noun))
+    ApplyInf(InfDeltaFor(table, match.verb, match.modifier))
   }
 }
 

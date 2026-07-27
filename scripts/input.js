@@ -1,9 +1,11 @@
 const modifier = (text) => {
-  const matches = PlayerActionsIn(text)
-  ApplyAllInf(PLAYER_TABLE, matches)
-  return {
-    text
-  }
+  const actionMatches = PlayerActionsIn(text)
+  ApplyAllInf(PLAYER_TABLE, actionMatches)
+
+  const purchaseMatches = PurchasesIn(text)
+  ApplyAllPurchases(purchaseMatches)
+
+  return { text }
 }
 
 modifier(text)

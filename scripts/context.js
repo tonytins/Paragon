@@ -1,14 +1,10 @@
 const modifier = (text) => {
-  const report = InfChangeReport()
+  const report = EventsReport()
   const nothingToReport = !report
-  if (nothingToReport) return {
-    text
-  }
+  if (nothingToReport) return { text }
 
   state.memory.frontMemory = report
-  return {
-    text
-  }
+  return { text }
 }
 
 modifier(text)
